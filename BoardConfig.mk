@@ -1,166 +1,158 @@
 #
-# SPDX-License-Identifier: Apache-2.0
+# Copyright (C) 2019 The TwrpBuilder Open-Source Project
 #
-# Copyright (C) 2022-2023 The OrangeFox Recovery Project
-# SPDX-License-Identifier: GPL-3.0-or-later
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
 #
-
-
-DEVICE_PATH := device/xiaomi/lisa
-
-# For building with minimal manifest
-ALLOW_MISSING_DEPENDENCIES := true
-BUILD_BROKEN_ELF_PREBUILT_PRODUCT_COPY_FILES := true
-BUILD_BROKEN_PREBUILT_ELF_FILES := true
-BUILD_BROKEN_DUP_RULES := true
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
 # Architecture
 TARGET_ARCH := arm64
 TARGET_ARCH_VARIANT := armv8-a
 TARGET_CPU_ABI := arm64-v8a
 TARGET_CPU_ABI2 :=
-TARGET_CPU_VARIANT := generic
-TARGET_CPU_VARIANT_RUNTIME := kryo300
+TARGET_CPU_VARIANT := kryo
+TARGET_CPU_VARIANT_RUNTIME := kryo680
 
 TARGET_2ND_ARCH := arm
-TARGET_2ND_ARCH_VARIANT := armv8-2a
+TARGET_2ND_ARCH_VARIANT := $(TARGET_ARCH_VARIANT)
 TARGET_2ND_CPU_ABI := armeabi-v7a
 TARGET_2ND_CPU_ABI2 := armeabi
 TARGET_2ND_CPU_VARIANT := $(TARGET_CPU_VARIANT)
-TARGET_2ND_CPU_VARIANT_RUNTIME := cortex-a75
+TARGET_2ND_CPU_VARIANT_RUNTIME := $(TARGET_CPU_VARIANT_RUNTIME)
+
+ENABLE_CPUSETS := true
+ENABLE_SCHEDBOOST := true
 
 # Bootloader
-TARGET_BOOTLOADER_BOARD_NAME := lisa
+PRODUCT_PLATFORM := lahaina
+TARGET_BOOTLOADER_BOARD_NAME := $(PRODUCT_RELEASE_NAME)
 TARGET_NO_BOOTLOADER := true
+TARGET_USES_UEFI := true
 
 # Platform
-BOARD_USES_QCOM_HARDWARE := true
-TARGET_BOARD_PLATFORM := lahaina
-TARGET_BOARD_PLATFORM_GPU := qcom-adreno642l
-BOARD_VENDOR := xiaomi
+TARGET_BOARD_PLATFORM := xiaomi_sm8350
+TARGET_BOARD_PLATFORM_GPU := qcom-adreno660
+QCOM_BOARD_PLATFORMS += xiaomi_sm8350
 
 # Kernel
-BOARD_BOOT_HEADER_VERSION := 3
+VENDOR_CMDLINE := "console=ttyMSM0,115200n8 androidboot.hardware=qcom androidboot.console=ttyMSM0 androidboot.memcg=1 lpm_levels.sleep_disabled=1 video=vfb:640x400,bpp=32,memsize=3072000 msm_rtb.filter=0x237 service_locator.enable=1 androidboot.usbcontroller=a600000.dwc3 swiotlb=0 loop.max_part=7 cgroup.memory=nokmem,nosocket pcie_ports=compat iptable_raw.raw_before_defrag=1 ip6table_raw.raw_before_defrag=1 reboot=panic_warm androidboot.init_fatal_reboot_target=recovery androidboot.selinux=permissive"
 BOARD_KERNEL_PAGESIZE := 4096
-
 BOARD_KERNEL_BASE          := 0x00000000
-BOARD_RAMDISK_OFFSET       := 0x01000000
-BOARD_KERNEL_TAGS_OFFSET   := 0x00000100
-BOARD_DTB_OFFSET           := 0x01f00000
-BOARD_KERNEL_OFFSET        := 0x00008000
-
-BOARD_KERNEL_IMAGE_NAME := kernel
-BOARD_KERNEL_SEPARATED_DTBO := true
-
-
-VENDOR_CMDLINE := " console=null \
-                    androidboot.hardware=qcom \
-                    androidboot.memcg=1 \
-                    lpm_levels.sleep_disabled=1 \
-                    video=vfb:640x400,bpp=32,memsize=3072000 \
-                    msm_rtb.filter=0x237 \
-                    service_locator.enable=1 \
-                    androidboot.usbcontroller=a600000.dwc3 \
-                    swiotlb=0 \
-                    loop.max_part=7 \
-                    cgroup.memory=nokmem,nosocket \
-                    firmware_class.path=/vendor/firmware_mnt/image \
-                    pcie_ports=compat \
-                    loop.max_part=7 \
-                    iptable_raw.raw_before_defrag=1 \
-                    ip6table_raw.raw_before_defrag=1 "
+TARGET_KERNEL_ARCH := arm64
+TARGET_KERNEL_HEADER_ARCH := arm64
+TARGET_KERNEL_CLANG_COMPILE := true
+BOARD_KERNEL_IMAGE_NAME := Image
+BOARD_BOOT_HEADER_VERSION := 3
+TARGET_PREBUILT_KERNEL := $(DEVICE_PATH)/prebuilt/$(PRODUCT_RELEASE_NAME)/kernel
 
 BOARD_MKBOOTIMG_ARGS += --header_version $(BOARD_BOOT_HEADER_VERSION)
-BOARD_MKBOOTIMG_ARGS += --base $(BOARD_KERNEL_BASE)
-BOARD_MKBOOTIMG_ARGS += --pagesize $(BOARD_KERNEL_PAGESIZE)
-BOARD_MKBOOTIMG_ARGS += --ramdisk_offset $(BOARD_RAMDISK_OFFSET)
-BOARD_MKBOOTIMG_ARGS += --tags_offset $(BOARD_KERNEL_TAGS_OFFSET)
-BOARD_MKBOOTIMG_ARGS += --kernel_offset $(BOARD_KERNEL_OFFSET)
-BOARD_MKBOOTIMG_ARGS += --dtb_offset $(BOARD_DTB_OFFSET)
 BOARD_MKBOOTIMG_ARGS += --vendor_cmdline $(VENDOR_CMDLINE)
+BOARD_MKBOOTIMG_ARGS += --pagesize $(BOARD_KERNEL_PAGESIZE) --board ""
 
-# Kernel
-# whether to do an inline build of the kernel sources
-ifeq ($(FOX_BUILD_FULL_KERNEL_SOURCES),1)
-     TARGET_KERNEL_SOURCE := kernel/xiaomi/lisa
-     TARGET_KERNEL_CONFIG := lisa_defconfig
-     TARGET_KERNEL_CLANG_COMPILE := true
-     KERNEL_SUPPORTS_LLVM_TOOLS := true
-     TARGET_KERNEL_CROSS_COMPILE_PREFIX := llvm-
-     KERNEL_LD := LD=ld.lld
-#    TARGET_KERNEL_ADDITIONAL_FLAGS := AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy OBJDUMP=llvm-objdump STRIP=llvm-strip
-     TARGET_KERNEL_ADDITIONAL_FLAGS += HOSTCFLAGS=-fuse-ld=lld \
-                                                 -Wno-unused-command-line-argument
-     # clang-r383902 = 11.0.1; clang-r416183b = 12.0.5; clang-r416183b1 = 12.0.7;
-     # clang_13.0.0 (proton-clang 13.0.0, symlinked into prebuilts/clang/host/linux-x86/clang_13.0.0); clang-13+ is needed for Arrow-12.1 kernel sources
-     TARGET_KERNEL_CLANG_VERSION := r450784d
-     TARGET_KERNEL_CLANG_PATH := $(shell pwd)/prebuilts/clang/host/linux-x86/clang-r450784d
-     TARGET_KERNEL_ADDITIONAL_FLAGS := DTC_EXT=$(shell pwd)/prebuilts/misc/$(HOST_OS)-x86/dtc/dtc
-else
-     BOARD_PREBUILT_DTBOIMAGE := $(DEVICE_PATH)/prebuilt/dtbo.img
-     BOARD_MKBOOTIMG_ARGS += --dtb $(DEVICE_PATH)/prebuilt/dtb.img
-     TARGET_PREBUILT_KERNEL := $(DEVICE_PATH)/prebuilt/kernel
-endif
-#
 
-#BUILD_BROKEN_ELF_PREBUILT_PRODUCT_COPY_FILES := true
-TW_LOAD_VENDOR_MODULES := "adsp_loader_dlkm.ko exfat.ko hwid.ko goodix_core.ko msm_drm.ko qti_battery_charger_main.ko snd_event_dlkm.ko xiaomi_touch.ko"
+# Kenel dtb
+# BOARD_INCLUDE_DTB_IN_BOOTIMG := true
+TARGET_PREBUILT_DTB := $(DEVICE_PATH)/prebuilt/$(PRODUCT_RELEASE_NAME)/dtb
+BOARD_MKBOOTIMG_ARGS += --dtb $(TARGET_PREBUILT_DTB)
 
-# 12.1 manifest requirements
-TARGET_SUPPORTS_64_BIT_APPS := true
-BUILD_BROKEN_DUP_RULES := true
-#BUILD_BROKEN_ELF_PREBUILT_PRODUCT_COPY_FILES := true
-BUILD_BROKEN_MISSING_REQUIRED_MODULES := true # may not really be needed
+# Kenel dtbo
+BOARD_PREBUILT_DTBOIMAGE := $(DEVICE_PATH)/prebuilt/$(PRODUCT_RELEASE_NAME)/dtbo.img
 
 #A/B
-BOARD_USES_RECOVERY_AS_BOOT := 
-BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT := true
+BOARD_USES_RECOVERY_AS_BOOT := true
 BOARD_BUILD_SYSTEM_ROOT_IMAGE := false
 AB_OTA_UPDATER := true
 
-# Metadata
-BOARD_USES_METADATA_PARTITION := true
-BOARD_USES_QCOM_FBE_DECRYPTION := true
-TARGET_USERIMAGES_USE_EXT4 := true
-TARGET_USERIMAGES_USE_F2FS := true
+AB_OTA_PARTITIONS += \
+    boot \
+    dtbo \
+    odm \
+    product \
+    system \
+    system_ext \
+    vbmeta \
+    vbmeta_system \
+    vendor \
+    vendor_boot
+
+# QCOM
+#TARGET_USE_SDCLANG := true
+
+# Kernel modules
+#BOARD_VENDOR_KERNEL_MODULES_LOAD := $(strip $(shell cat $(DEVICE_PATH)/prebuilt/$(PRODUCT_RELEASE_NAME)/modules/5.4-gki/modules.load))
+#BOARD_VENDOR_RAMDISK_RECOVERY_KERNEL_MODULES_LOAD := $(strip $(shell cat $(DEVICE_PATH)/prebuilt/$(PRODUCT_RELEASE_NAME)/modules/5.4-gki/modules.load))
+#NEED_KERNEL_MODULE_RECOVERY := true
+
+# Avb
+BOARD_AVB_ENABLE := true
 
 # Partitions
-BOARD_FLASH_BLOCK_SIZE := 131072
 BOARD_BOOTIMAGE_PARTITION_SIZE := 201326592
-BOARD_VENDOR_BOOTIMAGE_PARTITION_SIZE := 100663296
 
-BOARD_SUPER_PARTITION_GROUPS := qti_dynamic_partitions
+# Dynamic Partition
 BOARD_SUPER_PARTITION_SIZE := 9126805504
-BOARD_QTI_DYNAMIC_PARTITIONS_PARTITION_LIST := odm odm_dlkm product system system_ext vendor vendor_dlkm
-BOARD_QTI_DYNAMIC_PARTITIONS_SIZE := 9122611200 # (BOARD_SUPER_PARTITION_SIZE - 4MB)
-
-BOARD_VENDOR_DLKMIMAGE_FILE_SYSTEM_TYPE := ext4
-TARGET_COPY_OUT_VENDOR_DLKM := vendor_dlkm
-BOARD_ODM_DLKMIMAGE_FILE_SYSTEM_TYPE := ext4
-TARGET_COPY_OUT_ODM_DLKM := odm_dlkm
-BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE := ext4
-TARGET_COPY_OUT_VENDOR := vendor
-
-# Properties
-TARGET_SYSTEM_PROP += $(DEVICE_PATH)/system.prop
-
-# Recovery
-TARGET_RECOVERY_PIXEL_FORMAT := "RGBX_8888"
-TARGET_USES_MKE2FS := true
+BOARD_SUPER_PARTITION_GROUPS := qti_dynamic_partitions
+# BOARD_QTI_DYNAMIC_PARTITIONS_SIZ=BOARD_SUPER_PARTITION_SIZE - 4MB
+BOARD_QTI_DYNAMIC_PARTITIONS_SIZE := 9122611200
+BOARD_QTI_DYNAMIC_PARTITIONS_PARTITION_LIST := product vendor system system_ext odm
 
 # System as root
 BOARD_ROOT_EXTRA_FOLDERS := bluetooth dsp firmware persist
 BOARD_SUPPRESS_SECURE_ERASE := true
 
-# AVB
-BOARD_AVB_ENABLE := true
-BOARD_AVB_VBMETA_SYSTEM := system
-BOARD_AVB_VBMETA_SYSTEM_KEY_PATH := external/avb/test/data/testkey_rsa2048.pem
-BOARD_AVB_VBMETA_SYSTEM_ALGORITHM := SHA256_RSA2048
-BOARD_AVB_VBMETA_SYSTEM_ROLLBACK_INDEX := $(PLATFORM_SECURITY_PATCH_TIMESTAMP)
-BOARD_AVB_VBMETA_SYSTEM_ROLLBACK_INDEX_LOCATION := 1
-BOARD_MOVE_GSI_AVB_KEYS_TO_VENDOR_BOOT := true
+# File systems
+TARGET_USERIMAGES_USE_EXT4 := true
+TARGET_USERIMAGES_USE_F2FS := true
 
+# Workaround for error copying vendor files to recovery ramdisk
+BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE := ext4
+TARGET_COPY_OUT_VENDOR := vendor
+
+#Init
+TARGET_INIT_VENDOR_LIB := //$(DEVICE_PATH):libinit_venus
+TARGET_RECOVERY_DEVICE_MODULES := libinit_venus
+TARGET_PLATFORM_DEVICE_BASE := /devices/soc/
+
+# Recovery
+BOARD_HAS_LARGE_FILESYSTEM := true
+TARGET_RECOVERY_PIXEL_FORMAT := "RGBX_8888"
+
+ALLOW_MISSING_DEPENDENCIES := true
+
+# Crypto
+BOARD_USES_QCOM_FBE_DECRYPTION := true
+BOARD_USES_METADATA_PARTITION := true
+ifdef DECRYPT_PLATFORM_VERSION
+PLATFORM_VERSION := $(DECRYPT_PLATFORM_VERSION)
+else
+PLATFORM_VERSION := 16
+endif
+PLATFORM_VERSION_LAST_STABLE := $(PLATFORM_VERSION)
+PLATFORM_SECURITY_PATCH := 2099-12-31
+VENDOR_SECURITY_PATCH := $(PLATFORM_SECURITY_PATCH)
+BOOT_SECURITY_PATCH := $(PLATFORM_SECURITY_PATCH)
+TW_INCLUDE_CRYPTO := true
+TW_INCLUDE_CRYPTO_FBE := true
+TW_INCLUDE_FBE_METADATA_DECRYPT := true
+TW_USE_FSCRYPT_POLICY := 2
+
+# Network
+BUILD_BROKEN_USES_NETWORK := true
+
+# Tool
+TW_INCLUDE_REPACKTOOLS := true
+TW_INCLUDE_RESETPROP := true
+TW_INCLUDE_LIBRESETPROP := true
+			     
 # TWRP Configuration
 TW_THEME := portrait_hdpi
 RECOVERY_SDCARD_ON_DATA := true
@@ -170,42 +162,19 @@ TW_EXCLUDE_TWRPAPP := true
 TW_EXTRA_LANGUAGES := true
 TW_INPUT_BLACKLIST := "hbtp_vm"
 TW_BRIGHTNESS_PATH := "/sys/class/backlight/panel0-backlight/brightness"
-TW_DEFAULT_BRIGHTNESS := 750
+TW_DEFAULT_BRIGHTNESS := 2047
 TW_USE_TOOLBOX := true
 TW_INCLUDE_NTFS_3G := true
 TW_INCLUDE_REPACKTOOLS := true
 TW_INCLUDE_RESETPROP := true
-TW_HAS_DOWNLOAD_MODE := true
 TW_EXCLUDE_APEX := true
-TW_NO_REBOOT_BOOTLOADER := true
-TARGET_USES_MKE2FS := true
+TW_USE_FSCRYPT_POLICY := 2
 TW_NO_SCREEN_BLANK := true
-TW_INCLUDE_CRYPTO := true
 TW_BACKUP_EXCLUSIONS := /data/fonts
-TARGET_USE_CUSTOM_LUN_FILE_PATH := /config/usb_gadget/g1/functions/mass_storage.0/lun.%d/file
-TW_CUSTOM_CPU_TEMP_PATH := "/sys/devices/virtual/thermal/thermal_zone50/temp"
-TW_INCLUDE_PYTHON := true
-TWRP_INCLUDE_LOGCAT := true
-TARGET_USES_LOGD := true
-
-# unified script
-PRODUCT_COPY_FILES += $(DEVICE_PATH)/prebuilt/unified-script.sh:$(TARGET_COPY_OUT_RECOVERY)/root/system/bin/unified-script.sh
-TARGET_OTA_ASSERT_DEVICE := lisa
-
-# vendor_boot as recovery?
-ifeq ($(OF_VENDOR_BOOT_RECOVERY),1)
-  BOARD_BOOT_HEADER_VERSION := 4
-  BOARD_USES_RECOVERY_AS_BOOT := false
-
-  BOARD_INCLUDE_RECOVERY_RAMDISK_IN_VENDOR_BOOT := true
-  BOARD_MOVE_RECOVERY_RESOURCES_TO_VENDOR_BOOT := true
-  BOARD_EXCLUDE_KERNEL_FROM_RECOVERY_IMAGE := false
-  BOARD_USES_GENERIC_KERNEL_IMAGE := true
-  BOARD_MOVE_GSI_AVB_KEYS_TO_VENDOR_BOOT := true
-
-# BOARD_PREBUILT_DTBIMAGE_DIR := $(KERNEL_PATH)/dtbs
-  BOARD_INCLUDE_DTB_IN_BOOTIMG := true
-
-  BOARD_MKBOOTIMG_ARGS += --vendor_cmdline $(VENDOR_CMDLINE)
-endif
-#
+TARGET_USE_CUSTOM_LUN_FILE_PATH := "/config/usb_gadget/g1/functions/mass_storage.0/lun.%d/file"
+TW_CUSTOM_CPU_TEMP_PATH := "/sys/devices/virtual/thermal/thermal_zone17/temp"
+TW_DEFAULT_EXTERNAL_STORAGE := true
+#TW_INTERNAL_STORAGE_PATH := "/data/media"
+#TW_INTERNAL_STORAGE_MOUNT_POINT := "data"
+#TW_EXTERNAL_STORAGE_PATH := "/external_sd"
+#TW_EXTERNAL_STORAGE_MOUNT_POINT := "external_sd"
